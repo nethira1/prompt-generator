@@ -80,4 +80,8 @@ Original prompt: {original_prompt}"""
         return jsonify({"error": f"API Error: {str(e)}", "error_type": type(e).__name__}), 500
 
 if __name__ == "__main__":
-    app.run(port=5000, debug=True)
+    import os
+    port = int(os.getenv("PORT", 5000))
+    host = os.getenv("HOST", "0.0.0.0")
+    debug_mode = os.getenv("FLASK_DEBUG", "False").lower() == "true"
+    app.run(host=host, port=port, debug=debug_mode)

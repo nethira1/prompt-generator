@@ -1,11 +1,12 @@
 from flask import Flask, render_template, request, jsonify
 import requests
 import json
+import os
 
 app = Flask(__name__, template_folder=".", static_folder=".")
 
-# Gemini API backend endpoint
-BACKEND_URL = "http://127.0.0.1:5000/v1/chat/completions"
+# Get backend URL from environment or use default
+BACKEND_URL = os.getenv("BACKEND_URL", "http://127.0.0.1:5000/v1/chat/completions")
 
 def generate_prompt_variations(base_prompt: str, num_variations: int = 5) -> list:
     """Use Gemini backend to generate prompt variations."""
@@ -64,9 +65,13 @@ def api_test_prompt():
     return jsonify({"response": response})
 
 if __name__ == "__main__":
+    port = int(os.getenv("PORT", 3001))
+    host = os.getenv("HOST", "0.0.0.0")
+    debug_mode = os.getenv("FLASK_DEBUG", "False").lower() == "true"
+    
     print("=" * 60)
-    print("  Prompt Generator — Powered by Gemini")
-    print("  UI:       http://127.0.0.1:3001")
-    print("  Backend:  http://127.0.0.1:5000")
+    print("  Prompt Generator — Powered by Groq")
+    print(f"  UI:       Running on {host}:{port}")
+    print(f"  Backend:  {BACKEND_URL}")
     print("=" * 60)
-    app.run(host="127.0.0.1", port=3001, debug=True)
+    app.run(host=host, port=port, debug=debug_mode)
