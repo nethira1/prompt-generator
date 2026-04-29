@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prompt Generator - OpenClaw + Gemini</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .subtitle {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        label {
+            color: #555;
+            font-weight: 500;
+        }
+
+        input[type="number"] {
+            width: 70px;
+            padding: 8px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+            flex: 1;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+            padding: 8px 16px;
+            font-size: 0.9em;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-copy {
+            padding: 6px 12px;
+            font-size: 0.85em;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .variation-item {
+            background: #f9f9f9;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 6px;
+            position: relative;
+        }
+
+        .variation-item p {
+            color: #333;
+            line-height: 1.6;
+            margin-bottom: 10px;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .variation-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .variation-text {
+            font-family: 'Courier New', monospace;
+            font-size: 0.95em;
+            color: #555;
+        }
+
+        .response-text {
+            font-family: 'Courier New', monospace;
+            font-size: 0.95em;
+            color: #555;
+            white-space: pre-wrap;
+            word-break: break-word;
+            line-height: 1.6;
+        }
+
+        .variations-container {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .test-result {
+            background: #f0f7ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+        }
+
+        .test-result h3 {
+            color: #1976D2;
+            margin-bottom: 10px;
+        }
+
+        .copy-success {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #4CAF50;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 6px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .error {
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 1000px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #999;
+            padding: 40px 20px;
+        }
+
+        .empty-state p {
+            font-size: 1.1em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 Prompt Generator</h1>
+            <p class="subtitle">Generate optimized prompt variations powered by Gemini API</p>
+        </header>
+
+        <div class="main-grid">
+            <!-- Left Column: Input -->
+            <div class="card">
+                <h2>📝 Original Prompt</h2>
+                <textarea id="basePrompt" placeholder="Enter your prompt here...&#10;&#10;Example: How can I improve my productivity?"></textarea>
+                
+                <div class="controls">
+                    <label for="numVariations">Variations:</label>
+                    <input type="number" id="numVariations" value="5" min="1" max="10">
+                    <button class="btn-primary" onclick="generateVariations()">Generate Variations</button>
+                </div>
+
+                <div id="loading" class="loading">
+                    <div class="spinner"></div>
+                    <p>Generating variations...</p>
+                </div>
+            </div>
+
+            <!-- Right Column: Output -->
+            <div class="card">
+                <h2>✨ Generated Variations</h2>
+                <div id="variationsContainer" class="variations-container">
+                    <div class="empty-state">
+                        <p>Enter a prompt and click "Generate Variations" to see results</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test Section -->
+        <div class="card">
+            <h2>🧪 Test Prompt Variations</h2>
+            <p style="color: #666; margin-bottom: 15px;">Select a variation to test it with Gemini API</p>
+            <textarea id="testPrompt" placeholder="Paste a variation here to test it..."></textarea>
+            <div class="controls" style="margin-top: 15px;">
+                <button class="btn-primary" onclick="testPrompt()">Test Prompt</button>
+            </div>
+            <div id="testResult"></div>
+        </div>
+    </div>
+
+    <script>
+        async function generateVariations() {
+            const basePrompt = document.getElementById('basePrompt').value.trim();
+            const numVariations = parseInt(document.getElementById('numVariations').value);
+
+            if (!basePrompt) {
+                showError('Please enter a prompt');
+                return;
+            }
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('variationsContainer').innerHTML = '';
+
+            try {
+                const response = await fetch('/api/generate-variations', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        prompt: basePrompt,
+                        num_variations: numVariations
+                    })
+                });
+
+                const data = await response.json();
+                displayVariations(data.variations);
+            } catch (error) {
+                showError(`Error: ${error.message}`);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        function displayVariations(variations) {
+            const container = document.getElementById('variationsContainer');
+            container.innerHTML = '';
+
+            if (!variations || variations.length === 0) {
+                container.innerHTML = '<div class="empty-state"><p>No variations generated</p></div>';
+                return;
+            }
+
+            variations.forEach((variation, index) => {
+                const item = document.createElement('div');
+                item.className = 'variation-item';
+                
+                const p = document.createElement('p');
+                p.className = 'variation-text';
+                p.textContent = variation;
+                
+                const actions = document.createElement('div');
+                actions.className = 'variation-actions';
+                
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'btn-secondary btn-copy';
+                copyBtn.textContent = 'Copy';
+                copyBtn.onclick = function() { copyToClipboard(variation); };
+                
+                const testBtn = document.createElement('button');
+                testBtn.className = 'btn-secondary btn-copy';
+                testBtn.textContent = 'Test';
+                testBtn.onclick = function() { testVariation(variation); };
+                
+                actions.appendChild(copyBtn);
+                actions.appendChild(testBtn);
+                item.appendChild(p);
+                item.appendChild(actions);
+                
+                container.appendChild(item);
+            });
+        }
+
+        async function testPrompt() {
+            const prompt = document.getElementById('testPrompt').value.trim();
+
+            if (!prompt) {
+                showError('Please enter a prompt to test');
+                return;
+            }
+
+            const resultDiv = document.getElementById('testResult');
+            resultDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Testing prompt...</p></div>';
+
+            try {
+                const response = await fetch('/api/test-prompt', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ prompt })
+                });
+
+                const data = await response.json();
+                displayTestResult(data.response);
+            } catch (error) {
+                showError(`Error: ${error.message}`);
+                resultDiv.innerHTML = '';
+            }
+        }
+
+        function testVariation(variation) {
+            document.getElementById('testPrompt').value = variation;
+            testPrompt();
+        }
+
+        function displayTestResult(response) {
+            const resultDiv = document.getElementById('testResult');
+            resultDiv.innerHTML = `
+                <div class="test-result">
+                    <h3>📊 Gemini Response</h3>
+                    <div class="response-text">${escapeHtml(response)}</div>
+                </div>
+            `;
+        }
+
+        function copyToClipboard(text) {
+            const cleanText = text.replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+            navigator.clipboard.writeText(cleanText).then(() => {
+                showSuccess('Copied to clipboard!');
+            }).catch(err => {
+                showError('Failed to copy');
+            });
+        }
+
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error';
+            errorDiv.textContent = message;
+            document.querySelector('.card').appendChild(errorDiv);
+            setTimeout(() => errorDiv.remove(), 5000);
+        }
+
+        function showSuccess(message) {
+            const successDiv = document.createElement('div');
+            successDiv.className = 'copy-success';
+            successDiv.textContent = message;
+            document.body.appendChild(successDiv);
+            setTimeout(() => successDiv.remove(), 3000);
+        }
+
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+    </script>
+</body>
+</html>
